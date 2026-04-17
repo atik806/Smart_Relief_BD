@@ -1,0 +1,274 @@
+.dashboard {
+  padding: 40px 0;
+  min-height: calc(100vh - var(--navbar-height));
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.dashboard-header h1 {
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #FFFFFF, #E63946);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dashboard-header p {
+  color: var(--color-muted);
+  font-size: 1.1rem;
+}
+
+.mission-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin: 40px 0;
+}
+
+.mission-card {
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mission-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-color);
+}
+
+.mission-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.mission-icon {
+  font-size: 2rem;
+}
+
+.mission-card-header h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.mission-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.aqi-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.aqi-gauge {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.aqi-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(0deg);
+}
+
+.aqi-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.aqi-number {
+  display: block;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.aqi-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-top: 4px;
+}
+
+.aqi-title {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.flood-risk-badge {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--risk-color);
+}
+
+.risk-label {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.risk-value {
+  font-weight: 600;
+  color: var(--risk-color);
+}
+
+.last-updated {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  text-align: right;
+}
+
+.hospital-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.hospital-icon {
+  font-size: 2.5rem;
+}
+
+.hospital-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hospital-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.hospital-distance {
+  font-size: 0.8rem;
+  color: var(--color-success);
+}
+
+.health-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.health-actions .btn {
+  justify-content: flex-start;
+  padding: 14px 20px;
+}
+
+.city-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.city-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.stat-text {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  margin-top: 4px;
+}
+
+.quick-actions-section {
+  margin-top: 60px;
+  text-align: center;
+}
+
+.quick-actions-section h2 {
+  margin-bottom: 24px;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 16px;
+  background: var(--color-card);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: var(--transition);
+}
+
+.quick-action:hover {
+  background: var(--color-card-hover);
+  transform: translateY(-4px);
+  border-color: var(--color-primary);
+}
+
+.quick-action.emergency {
+  background: rgba(230, 57, 70, 0.1);
+  border-color: rgba(230, 57, 70, 0.3);
+}
+
+.quick-action.emergency:hover {
+  background: rgba(230, 57, 70, 0.2);
+  border-color: var(--color-primary);
+}
+
+.action-icon {
+  font-size: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .mission-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .mission-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .quick-actions-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
