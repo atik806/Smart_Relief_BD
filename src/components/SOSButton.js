@@ -6,9 +6,10 @@ const SOSButton = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const emergencyServices = [
-    { icon: '🚑', label: 'Call Ambulance', number: '999', action: 'tel:999' },
-    { icon: '🚒', label: 'Fire Service', number: '199', action: 'tel:199' },
+    { icon: '🚑', label: 'Ambulance', number: '999', action: 'tel:999' },
+    { icon: '🚒', label: 'Fire Service', number: '999', action: 'tel:999' },
     { icon: '🚔', label: 'Police', number: '999', action: 'tel:999' },
+    { icon: '📞', label: 'Emergency Info', number: '999', action: 'tel:999' },
   ];
 
   return (

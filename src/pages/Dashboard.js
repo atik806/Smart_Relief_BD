@@ -1,16 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import StatsBar from '../components/StatsBar';
+import { fetchAirQuality } from '../utils/airQuality';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const [aqiValue, setAqiValue] = useState(0);
-  const [aqiTarget] = useState(156);
-  
-  React.useEffect(() => {
-    const timer = setTimeout(() => setAqiValue(aqiTarget), 300);
-    return () => clearTimeout(timer);
-  }, [aqiTarget]);
+  const [aqiData, setAqiData] = useState({
+    aqi: 0,
+    status: 'Loading...',
+    pm25: null,
+    pm10: null,
+    lastUpdated: null
+  });
+
+  useEffect(() => {
+    const loadAirQuality = async () => {
+      const data = await fetchAirQuality();
+      if (data) {
+        setAqiData({
+          aqi: data.aqi,
+          status: data.status,
+          pm25: data.pm25.current,
+          pm10: data.pm10.current,
+          lastUpdated: data.lastUpdated
+        });
+      }
+    };
+    loadAirQuality();
+    const interval = setInterval(loadAirQuality, 300000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const aqiValue = aqiData.aqi;
 
   const getAQIColor = (value) => {
     if (value <= 50) return '#2EC4B6';
@@ -140,17 +161,21 @@ const Dashboard = () => {
                           />
                         </svg>
                         <div className="aqi-value">
-                          <span className="aqi-number">{aqiValue}</span>
-                          <span className="aqi-label">{getAQILabel(aqiValue)}</span>
+                          <span className="aqi-number">{aqiValue || '—'}</span>
+                          <span className="aqi-label">{aqiData.status}</span>
                         </div>
                       </div>
                       <span className="aqi-title">Air Quality Index</span>
+                    </div>
+                    <div className="pollutant-info">
+                      <span>PM2.5: {aqiData.pm25 !== null ? `${aqiData.pm25.toFixed(1)} µg/m³` : '—'}</span>
+                      <span>PM10: {aqiData.pm10 !== null ? `${aqiData.pm10.toFixed(1)} µg/m³` : '—'}</span>
                     </div>
                     <div className="flood-risk-badge" style={{ '--risk-color': getFloodRiskColor('HIGH') }}>
                       <span className="risk-label">Flood Risk</span>
                       <span className="risk-value">{card.data.floodRisk}</span>
                     </div>
-                    <span className="last-updated">{card.data.lastUpdated}</span>
+                    <span className="last-updated">{aqiData.lastUpdated || 'Updating...'}</span>
                   </>
                 )}
 
