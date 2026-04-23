@@ -1,16 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { playAlarm, stopAlarm } from '../utils/sosFeatures';
 import './Navbar.css';
 
 const Navbar = () => {
   const [time, setTime] = useState(new Date());
   const [weather] = useState({ city: 'Dhaka', temp: 34, condition: '⛈' });
+  const [sosOpen, setSosOpen] = useState(false);
+  const [isAlarmActive, setIsAlarmActive] = useState(false);
+  const sosRef = useRef(null);
   const location = useLocation();
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (sosRef.current && !sosRef.current.contains(e.target)) {
+        setSosOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleAlarm = async () => {
+    if (isAlarmActive) {
+      stopAlarm();
+      setIsAlarmActive(false);
+    } else {
+      await playAlarm();
+      setIsAlarmActive(true);
+      setTimeout(() => {
+        stopAlarm();
+        setIsAlarmActive(false);
+      }, 5000);
+    }
+  };
+
+  const emergencyServices = [
+    { icon: '🚑', label: 'Ambulance', number: '999', action: 'tel:999' },
+    { icon: '🚒', label: 'Fire Service', number: '999', action: 'tel:999' },
+    { icon: '🚔', label: 'Police', number: '999', action: 'tel:999' },
+    { icon: '📞', label: 'National Emergency', number: '199', action: 'tel:199' },
+  ];
 
   const formatTime = (date) => {
     return date.toLocaleTimeString('en-US', { 
@@ -75,10 +110,36 @@ const Navbar = () => {
                 </Link>
               </li>
             ))}
-            <li>
-              <Link to="/emergency" className="nav-link emergency-link">
+            <li ref={sosRef} className="sos-dropdown-container">
+              <button 
+                className="nav-link emergency-link"
+                onClick={() => setSosOpen(!sosOpen)}
+              >
                 Emergency SOS
-              </Link>
+              </button>
+              {sosOpen && (
+                <div className="sos-dropdown">
+                  {emergencyServices.map((service) => (
+                    <a key={service.label} href={service.action} className="sos-dropdown-item">
+                      <span className="sos-item-icon">{service.icon}</span>
+                      <div className="sos-item-text">
+                        <span className="sos-item-label">{service.label}</span>
+                        <span className="sos-item-number">Dial {service.number}</span>
+                      </div>
+                    </a>
+                  ))}
+                  <button 
+                    className={`sos-dropdown-item sos-alarm-item ${isAlarmActive ? 'active' : ''}`}
+                    onClick={handleAlarm}
+                  >
+                    <span className="sos-item-icon">{isAlarmActive ? '🔇' : '📢'}</span>
+                    <div className="sos-item-text">
+                      <span className="sos-item-label">{isAlarmActive ? 'Stop Alarm' : 'Loud Alarm'}</span>
+                      <span className="sos-item-number">5 second siren</span>
+                    </div>
+                  </button>
+                </div>
+              )}
             </li>
           </ul>
 

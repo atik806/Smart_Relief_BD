@@ -133,6 +133,83 @@
   color: white !important;
 }
 
+.sos-dropdown-container {
+  position: relative;
+}
+
+.sos-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: rgba(10, 22, 40, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 220px;
+  z-index: 9999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.sos-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: var(--transition);
+  color: var(--color-text);
+  text-decoration: none;
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sos-dropdown-item:hover {
+  background: rgba(230, 57, 70, 0.15);
+}
+
+.sos-item-icon {
+  font-size: 1.5rem;
+}
+
+.sos-item-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.sos-item-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.sos-item-number {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.sos-alarm-item {
+  background: rgba(244, 162, 97, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.sos-alarm-item:hover,
+.sos-alarm-item.active {
+  background: rgba(244, 162, 97, 0.2);
+}
+
+.sos-alarm-item .sos-item-icon {
+  font-size: 1.8rem;
+}
+
 .navbar-right {
   display: flex;
   align-items: center;

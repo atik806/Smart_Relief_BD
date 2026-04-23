@@ -32,6 +32,42 @@
   transform: translateX(-5px);
 }
 
+.sos-option.sos-sos {
+  background: rgba(230, 57, 70, 0.15);
+  border-color: rgba(230, 57, 70, 0.4);
+}
+
+.sos-option.sos-sos:hover {
+  background: rgba(230, 57, 70, 0.3);
+  border-color: #E63946;
+}
+
+.sos-option.sos-alarm {
+  background: rgba(244, 162, 97, 0.15);
+  border-color: rgba(244, 162, 97, 0.4);
+  width: 100%;
+}
+
+.sos-option.sos-alarm:hover,
+.sos-option.sos-alarm.active {
+  background: rgba(244, 162, 97, 0.3);
+  border-color: #F4A261;
+}
+
+.sos-option.sos-alarm .sos-option-icon {
+  font-size: 1.8rem;
+}
+
+.sos-button.alarm-active {
+  background: linear-gradient(135deg, #F4A261, #e8924a);
+  animation: alarmPulse 0.3s infinite;
+}
+
+@keyframes alarmPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
 .sos-option-icon {
   font-size: 1.5rem;
 }
