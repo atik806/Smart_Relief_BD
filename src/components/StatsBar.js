@@ -1,76 +1,91 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './StatsBar.css';
 
+const STATS = [
+  { value: 2847, label: 'People Evacuated', icon: '👥' },
+  { value: 156, label: 'Active Rescuers', icon: '🚁' },
+  { value: 43, label: 'Districts Affected', icon: '📍' },
+  { value: 98, label: 'Hospitals Ready', icon: '🏥' },
+];
+
+const DURATION_MS = 2000;
+
+/** ease-out cubic */
+const easeOutCubic = (t) => 1 - (1 - t) ** 3;
+
 const StatsBar = () => {
-  const stats = [
-    { label: 'Alerts Issued Today', value: 2847, suffix: '' },
-    { label: 'Hospitals Connected', value: 143, suffix: '' },
-    { label: 'Issues Reported', value: 589, suffix: '' },
-    { label: 'Districts Under Watch', value: 12, suffix: '' },
-  ];
+  const sectionRef = useRef(null);
+  const [values, setValues] = useState(() => STATS.map(() => 0));
+  const [hasStarted, setHasStarted] = useState(false);
+  const rafRef = useRef(null);
 
-  const [animatedValues, setAnimatedValues] = useState(stats.map(() => 0));
-  const [hasAnimated, setHasAnimated] = useState(false);
+  const runCountUp = useCallback(() => {
+    const start = performance.now();
 
-  const animateValues = React.useCallback(() => {
-    const duration = 2000;
-    const steps = 60;
-    const interval = duration / steps;
+    const tick = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / DURATION_MS, 1);
+      const eased = easeOutCubic(progress);
 
-    let step = 0;
-    const timer = setInterval(() => {
-      step++;
-      const progress = step / steps;
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      setValues(STATS.map((s) => Math.floor(s.value * eased)));
 
-      setAnimatedValues(stats.map((stat) => Math.floor(stat.value * easedProgress)));
-
-      if (step >= steps) {
-        clearInterval(timer);
-        setAnimatedValues(stats.map((stat) => stat.value));
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        rafRef.current = null;
+        setValues(STATS.map((s) => s.value));
       }
-    }, interval);
-  }, [stats]);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+  }, []);
 
   useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return undefined;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !hasAnimated) {
-          setHasAnimated(true);
-          animateValues();
+        const [entry] = entries;
+        if (entry.isIntersecting && !hasStarted) {
+          setHasStarted(true);
+          runCountUp();
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.35, rootMargin: '0px 0px -10% 0px' }
     );
 
-    const statsSection = document.getElementById('stats-section');
-    if (statsSection) {
-      observer.observe(statsSection);
-    }
+    observer.observe(el);
 
-    return () => observer.disconnect();
-  }, [hasAnimated, animateValues]);
+    return () => {
+      observer.disconnect();
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [hasStarted, runCountUp]);
 
   return (
-    <div id="stats-section" className="stats-bar">
+    <section
+      ref={sectionRef}
+      className="stats-bar"
+      aria-label="Response statistics"
+    >
       <div className="stats-container">
-        {stats.map((stat, index) => (
-          <motion.div 
-            key={index}
-            className="stat-item"
-            initial={{ opacity: 0, y: 20 }}
-            animate={hasAnimated ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
+        {STATS.map((stat, index) => (
+          <div
+            key={stat.label}
+            className={`stat-card glass-card ${hasStarted ? 'stat-card--visible' : ''}`}
           >
-            <span className="stat-value">
-              {animatedValues[index].toLocaleString()}{stat.suffix}
+            <span className="stat-icon" aria-hidden="true">
+              {stat.icon}
             </span>
+            <span className="stat-value">{values[index].toLocaleString()}</span>
             <span className="stat-label">{stat.label}</span>
-          </motion.div>
+          </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 };
 

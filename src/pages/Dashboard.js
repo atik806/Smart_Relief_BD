@@ -1,254 +1,384 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import StatsBar from '../components/StatsBar';
-import { fetchAirQuality } from '../utils/airQuality';
+import PageTransition from '../components/PageTransition';
+import { fetchAirQuality, getAQIStatus } from '../utils/airQuality';
 import './Dashboard.css';
 
+const POLL_MS = 5 * 60 * 1000;
+
+const MOCK_ALERTS = [
+  {
+    id: 1,
+    time: '14:22',
+    date: 'Today',
+    type: 'Flood',
+    typeClass: 'alert-type--flood',
+    description: 'Surma River level rising — Sylhet Division on watch.',
+  },
+  {
+    id: 2,
+    time: '13:05',
+    date: 'Today',
+    type: 'Weather',
+    typeClass: 'alert-type--weather',
+    description: 'Heavy rainfall forecast for coastal districts next 24h.',
+  },
+  {
+    id: 3,
+    time: '11:40',
+    date: 'Today',
+    type: 'Road',
+    typeClass: 'alert-type--road',
+    description: 'Dhaka–Chittagong highway partial closure km 45 (landslide risk).',
+  },
+  {
+    id: 4,
+    time: '09:15',
+    date: 'Today',
+    type: 'Medical',
+    typeClass: 'alert-type--medical',
+    description: 'DMCH surge capacity activated for flood-related admissions.',
+  },
+  {
+    id: 5,
+    time: 'Yesterday',
+    date: '23 Apr',
+    type: 'Cyclone',
+    typeClass: 'alert-type--cyclone',
+    description: 'Cox’s Bazar coastal areas remain under cyclone watch.',
+  },
+];
+
+const tierFromAqiLabel = (label) => {
+  if (label === 'Data unavailable') return 'unavailable';
+  if (label === 'Good') return 'good';
+  if (label === 'Moderate') return 'moderate';
+  if (label === 'Unhealthy for Sensitive') return 'sensitive';
+  if (label === 'Unknown') return 'moderate';
+  return 'unhealthy';
+};
+
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [now, setNow] = useState(() => new Date());
   const [aqiData, setAqiData] = useState({
-    aqi: 0,
-    status: 'Loading...',
+    label: 'Loading...',
+    emoji: '',
+    color: 'rgba(255,255,255,0.35)',
     pm25: null,
     pm10: null,
-    lastUpdated: null
+    lastUpdated: null,
   });
+  const [aqiLoading, setAqiLoading] = useState(true);
 
-  useEffect(() => {
-    const loadAirQuality = async () => {
-      const data = await fetchAirQuality();
-      if (data) {
-        setAqiData({
-          aqi: data.aqi,
-          status: data.status,
-          pm25: data.pm25.current,
-          pm10: data.pm10.current,
-          lastUpdated: data.lastUpdated
-        });
-      }
-    };
-    loadAirQuality();
-    const interval = setInterval(loadAirQuality, 300000);
-    return () => clearInterval(interval);
+  const loadAirQuality = useCallback(async () => {
+    const data = await fetchAirQuality();
+    setAqiLoading(false);
+    if (data) {
+      const q = getAQIStatus(data.pm25);
+      setAqiData({
+        label: q.label,
+        emoji: q.emoji,
+        color: q.color,
+        pm25: data.pm25,
+        pm10: data.pm10,
+        lastUpdated: data.lastUpdated,
+      });
+    }
   }, []);
 
-  const aqiValue = aqiData.aqi;
+  useEffect(() => {
+    loadAirQuality();
+    const poll = setInterval(loadAirQuality, POLL_MS);
+    return () => clearInterval(poll);
+  }, [loadAirQuality]);
 
-  const getAQIColor = (value) => {
-    if (value <= 50) return '#2EC4B6';
-    if (value <= 100) return '#F4A261';
-    if (value <= 150) return '#E63946';
-    return '#9B2335';
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const aqiTier = tierFromAqiLabel(aqiData.label);
+  const aqiStroke = aqiData.color;
+  const pm25Gauge = aqiData.pm25 != null ? Math.min(aqiData.pm25 / 75, 1) : 0;
+
+  const heroDateTime = now.toLocaleString('en-GB', {
+    timeZone: 'Asia/Dhaka',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
+
+  const handleQuickSos = () => {
+    window.location.href = 'tel:999';
   };
-
-  const getAQILabel = (value) => {
-    if (value <= 50) return 'Good';
-    if (value <= 100) return 'Moderate';
-    if (value <= 150) return 'Unhealthy for Sensitive';
-    if (value <= 200) return 'Unhealthy';
-    if (value <= 300) return 'Very Unhealthy';
-    return 'Hazardous';
-  };
-
-  const getFloodRiskColor = (level) => {
-    const colors = {
-      LOW: '#2EC4B6',
-      MEDIUM: '#F4A261',
-      HIGH: '#E63946',
-      CRITICAL: '#9B2335'
-    };
-    return colors[level] || '#2EC4B6';
-  };
-
-  const missionCards = [
-    {
-      id: 'earthcare',
-      title: 'EarthCare',
-      icon: '🌍',
-      accentColor: getFloodRiskColor('HIGH'),
-      data: {
-        aqi: aqiValue,
-        floodRisk: 'HIGH',
-        lastUpdated: '2 mins ago'
-      },
-      gradient: 'linear-gradient(135deg, rgba(46, 196, 182, 0.1), rgba(230, 57, 70, 0.1))'
-    },
-    {
-      id: 'healthnet',
-      title: 'HealthNet',
-      icon: '🏥',
-      accentColor: '#2EC4B6',
-      data: {
-        hospital: 'Bangabandhu Sheikh Mujib Medical University',
-        distance: '2.3 km'
-      },
-      gradient: 'linear-gradient(135deg, rgba(46, 196, 182, 0.15), rgba(100, 149, 237, 0.15))'
-    },
-    {
-      id: 'smartcity',
-      title: 'SmartCity',
-      icon: '🏙️',
-      accentColor: '#F4A261',
-      data: {
-        activeReports: 47,
-        trafficStatus: 'MODERATE'
-      },
-      gradient: 'linear-gradient(135deg, rgba(244, 162, 97, 0.15), rgba(230, 57, 70, 0.1))'
-    }
-  ];
 
   return (
-    <div className="dashboard">
-      <div className="container">
-        <motion.div 
-          className="dashboard-header"
-          initial={{ opacity: 0, y: -20 }}
+    <PageTransition>
+      <div className="dashboard">
+        <div className="container">
+        <motion.header
+          className="dashboard-hero"
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.45 }}
         >
-          <h1>Emergency Operations Center</h1>
-          <p>Bangladesh's unified disaster response and smart city management platform</p>
-        </motion.div>
+          <div className="dashboard-hero-top">
+            <span className="monitoring-badge" aria-label="System status">
+              <span className="monitoring-badge-dot" aria-hidden />
+              MONITORING ACTIVE
+            </span>
+          </div>
+          <h1 className="dashboard-hero-title">Bangladesh Emergency Operations Center</h1>
+          <p className="dashboard-hero-datetime">{heroDateTime} · Asia/Dhaka</p>
+        </motion.header>
 
         <StatsBar />
 
-        <div className="mission-cards">
-          {missionCards.map((card, index) => (
-            <motion.div
-              key={card.id}
-              className="mission-card glass-card"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.15, duration: 0.5 }}
-              style={{
-                '--accent-color': card.accentColor,
-                background: card.gradient
-              }}
-              whileHover={{ 
-                scale: 1.02,
-                boxShadow: `0 0 30px ${card.accentColor}30`
-              }}
-            >
-              <div className="mission-card-header">
-                <span className="mission-icon">{card.icon}</span>
-                <h3>{card.title}</h3>
+        <section className="mission-cards" aria-label="Mission overview">
+          <motion.article
+            className={`mission-card glass-card mission-card--lift aqi-tier--${aqiTier}`}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, duration: 0.45 }}
+            style={{ '--aqi-accent': aqiStroke }}
+          >
+            <div className="mission-card-header">
+              <span className="mission-icon" aria-hidden="true">
+                🌍
+              </span>
+              <div className="mission-title-row">
+                <h2 className="mission-card-title">EarthCare</h2>
+                <span className="mission-status-dot" title="Operational" aria-hidden />
               </div>
+            </div>
+            <p className="mission-tagline">Live air quality &amp; environmental risk</p>
 
-              <div className="mission-card-content">
-                {card.id === 'earthcare' && (
-                  <>
-                    <div className="aqi-section">
-                      <div className="aqi-gauge">
-                        <svg viewBox="0 0 120 120" className="aqi-ring">
-                          <circle
-                            cx="60"
-                            cy="60"
-                            r="52"
-                            fill="none"
-                            stroke="rgba(255,255,255,0.1)"
-                            strokeWidth="8"
-                          />
-                          <circle
-                            cx="60"
-                            cy="60"
-                            r="52"
-                            fill="none"
-                            stroke={getAQIColor(aqiValue)}
-                            strokeWidth="8"
-                            strokeLinecap="round"
-                            strokeDasharray={`${(aqiValue / 300) * 326.7} 326.7`}
-                            transform="rotate(-90 60 60)"
-                            style={{ transition: 'stroke-dasharray 1.5s ease-out' }}
-                          />
-                        </svg>
-                        <div className="aqi-value">
-                          <span className="aqi-number">{aqiValue || '—'}</span>
-                          <span className="aqi-label">{aqiData.status}</span>
-                        </div>
-                      </div>
-                      <span className="aqi-title">Air Quality Index</span>
-                    </div>
-                    <div className="pollutant-info">
-                      <span>PM2.5: {aqiData.pm25 !== null ? `${aqiData.pm25.toFixed(1)} µg/m³` : '—'}</span>
-                      <span>PM10: {aqiData.pm10 !== null ? `${aqiData.pm10.toFixed(1)} µg/m³` : '—'}</span>
-                    </div>
-                    <div className="flood-risk-badge" style={{ '--risk-color': getFloodRiskColor('HIGH') }}>
-                      <span className="risk-label">Flood Risk</span>
-                      <span className="risk-value">{card.data.floodRisk}</span>
-                    </div>
-                    <span className="last-updated">{aqiData.lastUpdated || 'Updating...'}</span>
-                  </>
-                )}
-
-                {card.id === 'healthnet' && (
-                  <>
-                    <div className="hospital-info">
-                      <div className="hospital-icon">🏥</div>
-                      <div className="hospital-details">
-                        <span className="hospital-name">{card.data.hospital}</span>
-                        <span className="hospital-distance">{card.data.distance} away</span>
-                      </div>
-                    </div>
-                    <div className="health-actions">
-                      <button className="btn btn-teal">
-                        <span>🤖</span> AI Symptom Check
-                      </button>
-                      <button className="btn btn-outline">
-                        <span>💚</span> Mental Health
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {card.id === 'smartcity' && (
-                  <>
-                    <div className="city-stats">
-                      <div className="city-stat">
-                        <span className="stat-number">{card.data.activeReports}</span>
-                        <span className="stat-text">Active Reports</span>
-                      </div>
-                      <div className="city-stat">
-                        <span className="stat-number badge badge-warning">{card.data.trafficStatus}</span>
-                        <span className="stat-text">Traffic Status</span>
-                      </div>
-                    </div>
-                    <button className="btn btn-primary">
-                      <span>📍</span> Report an Issue
-                    </button>
-                  </>
-                )}
+            {aqiLoading ? (
+              <div
+                className="aqi-skeleton-block"
+                aria-busy="true"
+                aria-label="Loading air quality data"
+              >
+                <div className="aqi-skeleton-row aqi-skeleton-row--top">
+                  <div className="skeleton skeleton--circle" />
+                  <div className="skeleton skeleton--pill" />
+                </div>
+                <div className="aqi-skeleton-row">
+                  <div className="skeleton skeleton--line" />
+                  <div className="skeleton skeleton--line" />
+                </div>
+                <div className="skeleton skeleton--line skeleton--line-wide" />
               </div>
-            </motion.div>
-          ))}
-        </div>
+            ) : (
+              <>
+                <div className="aqi-flood-row">
+                  <div className="aqi-gauge-wrap">
+                    <div className="aqi-gauge">
+                      <svg viewBox="0 0 120 120" className="aqi-ring" aria-hidden>
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="52"
+                          fill="none"
+                          stroke="rgba(255,255,255,0.1)"
+                          strokeWidth="8"
+                        />
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="52"
+                          fill="none"
+                          stroke={aqiStroke}
+                          strokeWidth="8"
+                          strokeLinecap="round"
+                          strokeDasharray={`${pm25Gauge * 326.7} 326.7`}
+                          transform="rotate(-90 60 60)"
+                          style={{
+                            transition: 'stroke 0.8s ease, stroke-dasharray 1.2s ease-out',
+                          }}
+                        />
+                      </svg>
+                      <div className="aqi-value-center">
+                        <span className="aqi-number">
+                          {aqiData.pm25 != null ? aqiData.pm25.toFixed(1) : '—'}
+                        </span>
+                        <span className={`aqi-status-label aqi-status-label--${aqiTier}`}>
+                          {aqiData.emoji} {aqiData.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flood-risk-pill" data-level="HIGH">
+                    <span className="flood-risk-pill-label">Flood risk</span>
+                    <span className="flood-risk-pill-value">HIGH</span>
+                  </div>
+                </div>
 
-        <motion.div 
+                <div className="pollutant-grid">
+                  <div className="pollutant-cell">
+                    <span className="pollutant-key">PM2.5</span>
+                    <span className="pollutant-val">
+                      {aqiData.pm25 != null ? `${aqiData.pm25.toFixed(1)} µg/m³` : '—'}
+                    </span>
+                  </div>
+                  <div className="pollutant-cell">
+                    <span className="pollutant-key">PM10</span>
+                    <span className="pollutant-val">
+                      {aqiData.pm10 != null ? `${aqiData.pm10.toFixed(1)} µg/m³` : '—'}
+                    </span>
+                  </div>
+                </div>
+                <p className="aqi-updated">
+                  {aqiData.lastUpdated
+                    ? `Updated ${aqiData.lastUpdated} (Dhaka)`
+                    : aqiData.label === 'Data unavailable'
+                      ? 'Live air quality data could not be loaded. Try again later.'
+                      : '…'}
+                </p>
+              </>
+            )}
+            <Link to="/flood-map" className="btn btn-primary mission-cta">
+              🗺️ Open flood map
+            </Link>
+          </motion.article>
+
+          <motion.article
+            className="mission-card glass-card mission-card--lift"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, duration: 0.45 }}
+          >
+            <div className="mission-card-header">
+              <span className="mission-icon" aria-hidden="true">
+                🏥
+              </span>
+              <div className="mission-title-row">
+                <h2 className="mission-card-title">HealthNet</h2>
+                <span className="mission-status-dot" title="Operational" aria-hidden />
+              </div>
+            </div>
+            <p className="mission-stat-highlight">156 hospitals networked</p>
+            <p className="mission-blurb">
+              Coordinated bed availability and referral paths across divisions.
+            </p>
+            <Link to="/health" className="btn btn-teal mission-cta">
+              🏥 Health services
+            </Link>
+          </motion.article>
+
+          <motion.article
+            className="mission-card glass-card mission-card--lift"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.45 }}
+          >
+            <div className="mission-card-header">
+              <span className="mission-icon" aria-hidden="true">
+                🏙️
+              </span>
+              <div className="mission-title-row">
+                <h2 className="mission-card-title">SmartCity</h2>
+                <span className="mission-status-dot" title="Operational" aria-hidden />
+              </div>
+            </div>
+            <p className="mission-stat-highlight">247 reports today</p>
+            <p className="mission-blurb">
+              Citizen issues triaged to city operations and response teams.
+            </p>
+            <Link to="/report" className="btn btn-outline mission-cta">
+              📋 Submit a report
+            </Link>
+          </motion.article>
+        </section>
+
+        <motion.section
           className="quick-actions-section"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.25, duration: 0.4 }}
+          aria-label="Quick actions"
         >
-          <h2>Quick Actions</h2>
+          <h2 className="section-heading">Quick Actions</h2>
           <div className="quick-actions-grid">
-            <a href="/flood-map" className="quick-action">
-              <span className="action-icon">🌊</span>
+            <button
+              type="button"
+              className="quick-action"
+              aria-label="Open flood map"
+              onClick={() => navigate('/flood-map')}
+            >
+              <span className="action-icon" aria-hidden>
+                🗺️
+              </span>
               <span>View Flood Map</span>
-            </a>
-            <a href="/health" className="quick-action">
-              <span className="action-icon">🩺</span>
-              <span>Health Assistant</span>
-            </a>
-            <a href="/report" className="quick-action">
-              <span className="action-icon">📱</span>
+            </button>
+            <button
+              type="button"
+              className="quick-action"
+              onClick={() => navigate('/health')}
+            >
+              <span className="action-icon" aria-hidden>
+                🏥
+              </span>
+              <span>Find Hospital</span>
+            </button>
+            <button
+              type="button"
+              className="quick-action"
+              aria-label="Submit a report"
+              onClick={() => navigate('/report')}
+            >
+              <span className="action-icon" aria-hidden>
+                📋
+              </span>
               <span>Report Issue</span>
-            </a>
-            <a href="tel:999" className="quick-action emergency">
-              <span className="action-icon">🚨</span>
-              <span>Emergency Call</span>
-            </a>
+            </button>
+            <button
+              type="button"
+              className="quick-action quick-action--sos"
+              aria-label="Call emergency SOS 999"
+              onClick={handleQuickSos}
+            >
+              <span className="action-icon" aria-hidden>
+                🆘
+              </span>
+              <span>Emergency SOS</span>
+            </button>
           </div>
-        </motion.div>
+        </motion.section>
+
+        <motion.section
+          className="recent-alerts"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.45 }}
+          aria-label="Recent alerts"
+        >
+          <h2 className="section-heading">Recent Alerts</h2>
+          <ul className="recent-alerts-list">
+            {MOCK_ALERTS.map((alert) => (
+              <li key={alert.id} className="recent-alert-item glass-card">
+                <div className="recent-alert-meta">
+                  <span className={`alert-type-badge ${alert.typeClass}`}>{alert.type}</span>
+                  <span className="recent-alert-time">
+                    {alert.time} · {alert.date}
+                  </span>
+                </div>
+                <p className="recent-alert-desc">{alert.description}</p>
+              </li>
+            ))}
+          </ul>
+        </motion.section>
+        </div>
       </div>
-    </div>
+    </PageTransition>
   );
 };
 

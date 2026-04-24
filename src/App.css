@@ -1,11 +1,37 @@
 .app {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-dark);
 }
 
 .main-content {
   flex: 1;
+  /* Header (ticker offset + 60px nav) sits in document flow; no extra top padding */
+  padding-top: 0;
+}
+
+.route-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  padding: var(--sp-8);
+}
+
+.route-fallback-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: route-spinner-rotate 0.7s linear infinite;
+}
+
+@keyframes route-spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {

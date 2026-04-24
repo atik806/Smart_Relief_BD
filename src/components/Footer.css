@@ -142,14 +142,30 @@
   }
 }
 
-@media (max-width: 768px) {
+/* Mobile ≤480px: single column stack */
+@media (max-width: 480px) {
+  .footer-container {
+    padding: 40px var(--sp-4, 16px) 24px;
+  }
+
   .footer-grid {
     grid-template-columns: 1fr;
-    gap: 30px;
+    gap: 28px;
   }
-  
+
+  .footer-about {
+    grid-column: 1;
+  }
+
   .footer-bottom {
     flex-direction: column;
     text-align: center;
+    margin-top: 36px;
+    padding-top: 24px;
+  }
+
+  .social-link {
+    width: 44px;
+    height: 44px;
   }
 }
