@@ -1,120 +1,181 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { playAlarm, stopAlarm } from '../utils/sosFeatures';
+import {
+  getCurrentLocation,
+  sendEmergencySMS,
+  playAlarm,
+  stopAlarm,
+} from '../utils/sosFeatures';
 import './SOSButton.css';
 
-const SOSButton = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isAlarmActive, setIsAlarmActive] = useState(false);
+function useFinePointerHover() {
+  const [fineHover, setFineHover] = useState(false);
 
-  const handleAlarm = async () => {
-    if (isAlarmActive) {
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const apply = () => setFineHover(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  return fineHover;
+}
+
+const SOSButton = () => {
+  const rootRef = useRef(null);
+  const [expanded, setExpanded] = useState(false);
+  const [alarmOn, setAlarmOn] = useState(false);
+  const [shareError, setShareError] = useState(null);
+  const finePointerHover = useFinePointerHover();
+
+  useEffect(() => {
+    const onPointerDown = (e) => {
+      if (!expanded) return;
+      const el = rootRef.current;
+      if (el && !el.contains(e.target)) {
+        setExpanded(false);
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+    };
+  }, [expanded]);
+
+  useEffect(
+    () => () => {
       stopAlarm();
-      setIsAlarmActive(false);
-    } else {
-      await playAlarm();
-      setIsAlarmActive(true);
-      setTimeout(() => {
-        stopAlarm();
-        setIsAlarmActive(false);
-      }, 5000);
+    },
+    []
+  );
+
+  const handleMainClick = () => {
+    if (!finePointerHover) {
+      setExpanded((v) => !v);
     }
   };
 
-  const emergencyServices = [
-    { icon: '🚑', label: 'Ambulance', number: '999', action: 'tel:999' },
-    { icon: '🚒', label: 'Fire Service', number: '999', action: 'tel:999' },
-    { icon: '🚔', label: 'Police', number: '999', action: 'tel:999' },
-    { icon: '📞', label: 'Emergency Info', number: '999', action: 'tel:999' },
-  ];
+  const handleShareLocation = async () => {
+    setShareError(null);
+    try {
+      const { lat, lon } = await getCurrentLocation();
+      sendEmergencySMS(lat, lon);
+    } catch {
+      setShareError('Could not get location. Allow access and try again.');
+      window.setTimeout(() => setShareError(null), 4000);
+    }
+  };
+
+  const handleAlarm = async () => {
+    if (alarmOn) {
+      stopAlarm();
+      setAlarmOn(false);
+      return;
+    }
+    try {
+      await playAlarm();
+      setAlarmOn(true);
+    } catch {
+      setShareError('Could not play alarm.');
+      window.setTimeout(() => setShareError(null), 3000);
+    }
+  };
+
+  const onContainerEnter = useCallback(() => {
+    if (finePointerHover) setExpanded(true);
+  }, [finePointerHover]);
+
+  const onContainerLeave = useCallback(() => {
+    if (finePointerHover) setExpanded(false);
+  }, [finePointerHover]);
 
   return (
-    <div 
-      className="sos-container"
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
+    <div
+      ref={rootRef}
+      className="sos-root"
+      onMouseEnter={onContainerEnter}
+      onMouseLeave={onContainerLeave}
     >
       <AnimatePresence>
-        {isExpanded && (
-          <motion.div 
-            className="sos-options"
-            initial={{ opacity: 0, scale: 0.8 }}
+        {expanded ? (
+          <motion.div
+            className="sos-panel"
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            style={{ transformOrigin: 'bottom right' }}
+            role="dialog"
+            aria-label="Emergency options"
           >
-            {emergencyServices.map((service, index) => (
-              <motion.a
-                key={service.label}
-                href={service.action}
-                className="sos-option"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
+            <p className="sos-panel-header">EMERGENCY</p>
+            {shareError ? (
+              <p className="sos-panel-error" role="alert">
+                {shareError}
+              </p>
+            ) : null}
+            <div className="sos-panel-actions">
+              <a
+                href="tel:999"
+                className="sos-panel-btn"
+                aria-label="Call emergency police, 999"
               >
-                <span className="sos-option-icon">{service.icon}</span>
-                <div className="sos-option-text">
-                  <span className="sos-option-label">{service.label}</span>
-                  <span className="sos-option-number">Dial {service.number}</span>
-                </div>
-              </motion.a>
-            ))}
-            <motion.button
-              className={`sos-option sos-alarm ${isAlarmActive ? 'active' : ''}`}
-              onClick={handleAlarm}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-              whileHover={{ scale: 1.05 }}
-            >
-              <span className="sos-option-icon">{isAlarmActive ? '🔇' : '📢'}</span>
-              <div className="sos-option-text">
-                <span className="sos-option-label">{isAlarmActive ? 'Stop Alarm' : 'Loud Alarm'}</span>
-                <span className="sos-option-number">5 second siren</span>
-              </div>
-            </motion.button>
-            <motion.a
-              href="tel:999"
-              className="sos-option sos-sos"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-              whileHover={{ scale: 1.05 }}
-            >
-              <span className="sos-option-icon">🆘</span>
-              <div className="sos-option-text">
-                <span className="sos-option-label">Call Emergency</span>
-                <span className="sos-option-number">Dial 999 immediately</span>
-              </div>
-            </motion.a>
+                <span aria-hidden>📞</span>
+                <span>Call 999 (Police)</span>
+              </a>
+              <a
+                href="tel:199"
+                className="sos-panel-btn"
+                aria-label="Call fire and rescue, 199"
+              >
+                <span aria-hidden>🚒</span>
+                <span>Call 199 (Fire)</span>
+              </a>
+              <a
+                href="tel:16555"
+                className="sos-panel-btn"
+                aria-label="Call flood helpline, 16555"
+              >
+                <span aria-hidden>🌊</span>
+                <span>Call 16555 (Flood)</span>
+              </a>
+              <button
+                type="button"
+                className="sos-panel-btn"
+                aria-label="Share my location for emergency SMS"
+                onClick={() => handleShareLocation()}
+              >
+                <span aria-hidden>📍</span>
+                <span>Share Location</span>
+              </button>
+              <button
+                type="button"
+                className={`sos-panel-btn sos-panel-btn--alarm ${alarmOn ? 'is-active' : ''}`}
+                aria-label={alarmOn ? 'Stop emergency alarm sound' : 'Play emergency alarm sound'}
+                onClick={() => handleAlarm()}
+              >
+                <span aria-hidden>🔊</span>
+                <span>{alarmOn ? 'Stop Alarm' : 'Play Alarm'}</span>
+              </button>
+            </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
 
-      <motion.button
-        className={`sos-button ${isAlarmActive ? 'alarm-active' : ''}`}
-        whileTap={{ scale: 0.95 }}
-        animate={isAlarmActive ? {} : {
-          boxShadow: [
-            '0 0 0 0 rgba(230, 57, 70, 0.7)',
-            '0 0 0 20px rgba(230, 57, 70, 0)',
-            '0 0 0 0 rgba(230, 57, 70, 0)'
-          ]
-        }}
-        transition={{
-          duration: 2,
-          repeat: isAlarmActive ? 0 : Infinity,
-          ease: 'easeInOut'
-        }}
+      <button
+        type="button"
+        className={`sos-fab ${alarmOn ? 'sos-fab--alarm' : ''}`}
+        aria-expanded={expanded}
+        aria-haspopup="dialog"
+        aria-label="Emergency SOS: open menu for 999, location share, and alarm"
+        onClick={handleMainClick}
       >
-        <span className="sos-text">{isAlarmActive ? '🔊' : 'SOS'}</span>
-        <motion.span 
-          className="sos-pulse"
-          animate={isAlarmActive ? { scale: [1, 1.3, 1], opacity: [0.7, 0, 0.7] } : { scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-          transition={{ duration: isAlarmActive ? 0.3 : 2, repeat: Infinity }}
-        />
-      </motion.button>
+        <span className="sos-fab-ring" aria-hidden />
+        <span className="sos-fab-label">SOS</span>
+      </button>
     </div>
   );
 };

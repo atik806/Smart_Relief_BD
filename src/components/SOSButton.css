@@ -1,145 +1,166 @@
-.sos-container {
+.sos-root {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 1000;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  right: calc(24px + env(safe-area-inset-right, 0px));
+  z-index: 9999;
   display: flex;
+  flex-direction: column;
   align-items: flex-end;
   gap: 12px;
 }
 
-.sos-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.sos-panel {
+  width: min(280px, calc(100vw - 48px));
+  padding: 14px 14px 12px;
+  background: rgba(10, 14, 26, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
 }
 
-.sos-option {
+.sos-panel-header {
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(230, 57, 70, 0.35);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ff6b6b;
+  text-align: center;
+}
+
+.sos-panel-error {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #ffb4b4;
+  background: rgba(230, 57, 70, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(230, 57, 70, 0.3);
+}
+
+.sos-panel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sos-panel-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
-  background: rgba(10, 22, 40, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  transition: var(--transition);
-}
-
-.sos-option:hover {
-  background: rgba(230, 57, 70, 0.2);
-  border-color: var(--color-primary);
-  transform: translateX(-5px);
-}
-
-.sos-option.sos-sos {
-  background: rgba(230, 57, 70, 0.15);
-  border-color: rgba(230, 57, 70, 0.4);
-}
-
-.sos-option.sos-sos:hover {
-  background: rgba(230, 57, 70, 0.3);
-  border-color: #E63946;
-}
-
-.sos-option.sos-alarm {
-  background: rgba(244, 162, 97, 0.15);
-  border-color: rgba(244, 162, 97, 0.4);
+  gap: 10px;
   width: 100%;
-}
-
-.sos-option.sos-alarm:hover,
-.sos-option.sos-alarm.active {
-  background: rgba(244, 162, 97, 0.3);
-  border-color: #F4A261;
-}
-
-.sos-option.sos-alarm .sos-option-icon {
-  font-size: 1.8rem;
-}
-
-.sos-button.alarm-active {
-  background: linear-gradient(135deg, #F4A261, #e8924a);
-  animation: alarmPulse 0.3s infinite;
-}
-
-@keyframes alarmPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-.sos-option-icon {
-  font-size: 1.5rem;
-}
-
-.sos-option-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.sos-option-label {
-  font-size: 0.875rem;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text, #f1faee);
+  font-size: 0.88rem;
   font-weight: 500;
-  color: var(--color-text);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-main, inherit);
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.sos-option-number {
-  font-size: 0.75rem;
-  color: var(--color-muted);
+.sos-panel-btn:hover {
+  background: rgba(230, 57, 70, 0.18);
+  border-color: rgba(230, 57, 70, 0.45);
 }
 
-.sos-button {
-  width: 72px;
-  height: 72px;
+.sos-panel-btn--alarm.is-active {
+  background: rgba(244, 162, 97, 0.22);
+  border-color: rgba(244, 162, 97, 0.5);
+}
+
+.sos-fab {
+  position: relative;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #E63946, #c5303c);
   border: none;
+  padding: 0;
+  cursor: pointer;
+  background: linear-gradient(145deg, #ff4d5d 0%, #c9182e 55%, #9b1428 100%);
+  box-shadow:
+    0 4px 20px rgba(230, 57, 70, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sos-fab:hover {
+  filter: brightness(1.06);
+}
+
+.sos-fab:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.sos-fab--alarm {
+  background: linear-gradient(145deg, #f4a261 0%, #e76f51 100%);
+  animation: sos-alarm-fab 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes sos-alarm-fab {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.04);
+  }
+}
+
+.sos-fab-label {
   position: relative;
-  box-shadow: 0 4px 20px rgba(230, 57, 70, 0.5);
-}
-
-.sos-button:hover {
-  transform: scale(1.05);
-}
-
-.sos-text {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: white;
-  letter-spacing: 2px;
   z-index: 1;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-.sos-pulse {
+/* Pulsing ring */
+.sos-fab-ring {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  inset: -4px;
   border-radius: 50%;
-  border: 2px solid #E63946;
+  border: 2px solid rgba(230, 57, 70, 0.85);
+  animation: sos-pulse-ring 2s ease-out infinite;
+  pointer-events: none;
 }
 
-@media (max-width: 768px) {
-  .sos-container {
-    bottom: 20px;
-    right: 20px;
+.sos-fab--alarm .sos-fab-ring {
+  border-color: rgba(244, 162, 97, 0.9);
+  animation-duration: 0.9s;
+}
+
+@keyframes sos-pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
   }
-  
-  .sos-button {
-    width: 64px;
-    height: 64px;
+  70% {
+    transform: scale(1.35);
+    opacity: 0;
   }
-  
-  .sos-options {
-    position: absolute;
-    bottom: 80px;
-    right: 0;
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
   }
-  
-  .sos-option {
-    padding: 10px 16px;
+}
+
+@media (max-width: 480px) {
+  .sos-root {
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    right: calc(16px + env(safe-area-inset-right, 0px));
   }
 }

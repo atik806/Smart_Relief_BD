@@ -1,56 +1,87 @@
 .stats-bar {
-  background: linear-gradient(90deg, rgba(230, 57, 70, 0.1), rgba(46, 196, 182, 0.1));
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 30px 0;
-  margin: 40px 0;
+  padding: var(--sp-8, 32px) 0;
+  margin: var(--sp-8, 32px) 0;
 }
 
 .stats-container {
-  max-width: 1440px;
+  max-width: var(--container-max-width, 1440px);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--container-padding-x, 24px);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 30px;
+  /* Desktop ≥1025px: single row */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-6, 24px);
 }
 
-.stat-item {
+.stat-card.glass-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid var(--primary);
+}
+
+.stat-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 20px;
-  background: var(--color-card);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: var(--sp-5, 20px) var(--sp-5, 20px) var(--sp-6, 24px);
+  border-radius: var(--radius-lg, 12px);
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+}
+
+.stat-card--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stat-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  margin-bottom: var(--sp-3, 12px);
 }
 
 .stat-value {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
-  color: var(--color-text);
-  line-height: 1.2;
+  color: var(--text-primary, var(--color-text));
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-label {
   font-size: 0.875rem;
-  color: var(--color-muted);
-  margin-top: 8px;
+  color: var(--text-muted, var(--color-muted));
+  margin-top: var(--sp-2, 8px);
+  line-height: 1.4;
 }
 
+/* Tablet + mobile: 2×2 grid */
 @media (max-width: 1024px) {
   .stats-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--sp-5, 20px);
   }
 }
 
-@media (max-width: 768px) {
-  .stats-container {
-    grid-template-columns: 1fr;
+@media (max-width: 480px) {
+  .stats-bar {
+    padding: var(--sp-6, 24px) 0;
+    margin: var(--sp-6, 24px) 0;
   }
-  
+
+  .stats-container {
+    gap: var(--sp-4, 16px);
+    padding: 0 var(--sp-4, 16px);
+  }
+
   .stat-value {
-    font-size: 2rem;
+    font-size: 1.85rem;
+  }
+
+  .stat-card {
+    padding: var(--sp-4, 16px);
   }
 }
